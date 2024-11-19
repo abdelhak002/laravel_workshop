@@ -9,26 +9,18 @@ use Illuminate\Http\Response;
 use Illuminate\View\View;
 use App\Http\Requests\TaskStoreRequest;
 use App\Http\Requests\TaskUpdateRequest;
+use Illuminate\Http\Resources\Json\JsonResource;
 
 class TaskController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index(): View
+    public function index()
     {
         $tasks = Task::latest()->paginate(5);
 
-        return view('tasks.index', compact('tasks'))
-                    ->with('i', (request()->input('page', 1) - 1) * 5);
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create(): View
-    {
-        return view('tasks.create');
+        return JsonResource::collection($tasks);
     }
 
     /**
@@ -36,26 +28,15 @@ class TaskController extends Controller
      */
     public function store(TaskStoreRequest $request): RedirectResponse
     {
-        Task::create($request->validated());
-
-        return redirect()->route('tasks.index')
-                         ->with('success', 'Task created successfully.');
+        return new JsonResource(Task::create($request->validated()));
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Task $task): View
+    public function show(Task $task)
     {
-        return view('tasks.show',compact('task'));
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Task $task): View
-    {
-        return view('tasks.edit',compact('task'));
+        return new JsonResource($task);
     }
 
     /**
@@ -65,8 +46,11 @@ class TaskController extends Controller
     {
         $task->update($request->validated());
 
-        return redirect()->route('tasks.index')
-                        ->with('success','Task updated successfully');
+        return new JsonResource([
+            'success'=> true,
+            'message'=> 'Task Updated',
+            'data'=> $task
+        ]);
     }
 
     /**
@@ -76,7 +60,9 @@ class TaskController extends Controller
     {
         $task->delete();
 
-        return redirect()->route('tasks.index')
-                        ->with('success','Task deleted successfully');
+        return new JsonResource([
+            'success'=> true,
+            'message'=> 'Task deleted successfully'
+        ]);
     }
 }
